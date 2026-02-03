@@ -1,0 +1,14 @@
+.venv/*
+state/snapshots*
+node_link_extractor/node_modules/*
+*/__pycache__/*
+*/__pycache__
+state/*
+.env
+*.DS_Store
+*/.DS_Store
+tracker/.DS_Store
+.DS_Store
+jobs_filtered.xlsx
+job_details.xlsx
+job_details.csv

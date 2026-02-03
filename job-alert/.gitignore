@@ -1,0 +1,21 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# Environment variables / secrets
+.env
+
+# Puppeteer artifacts
+puppeteer_scraper/results/
+puppeteer_scraper/*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor junk
+.vscode/

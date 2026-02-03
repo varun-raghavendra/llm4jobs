@@ -1,0 +1,6 @@
+lyft_TN,https://www.lyft.com/careers#openings?category=software%2520engineering&location=nashville%252C%2520tn
+lyft_NY,https://www.lyft.com/careers#openings?category=software%2520engineering&location=new%2520york%252C%2520ny
+lyft_CO,https://www.lyft.com/careers#openings?category=software%2520engineering&location=denver%252C%2520co
+lyft_CA,https://www.lyft.com/careers#openings?category=software%2520engineering&location=san%2520francisco%252C%2520ca
+lyft_WA,https://www.lyft.com/careers#openings?category=software%2520engineering&location=seattle%252C%2520wa
+lyft_DC,https://www.lyft.com/careers#openings?category=software%2520engineering&location=washington%252C%2520dc
