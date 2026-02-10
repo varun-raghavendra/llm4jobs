@@ -9,11 +9,31 @@ import socket
 import subprocess
 import time
 import signal
+from urllib.parse import urlparse
 from typing import Optional, Tuple
 
 from tracker.db import SQLiteState
 
 LOG = logging.getLogger("tracker.inference_worker")
+BLOCKED_HOSTS = {"errors.edgesuite.net"}
+
+
+def is_http_url(value: str) -> bool:
+    try:
+        u = urlparse(value.strip())
+    except Exception:
+        return False
+    return u.scheme in ("http", "https")
+
+
+def should_skip_url(value: str) -> bool:
+    if not is_http_url(value):
+        return True
+    try:
+        host = urlparse(value.strip()).hostname or ""
+    except Exception:
+        return True
+    return host in BLOCKED_HOSTS
 
 
 def setup_logging(verbose: bool) -> None:
@@ -146,6 +166,7 @@ def expand_one_diff(state: SQLiteState, owner: str) -> int:
         if not isinstance(urls, list):
             urls = []
         urls = [str(u) for u in urls if u]
+        urls = [u for u in urls if not should_skip_url(u)]
         inserted = state.add_job_tasks(site=row["site"], urls=urls)
         state.mark_diff_done(row["id"])
         return inserted
@@ -195,6 +216,13 @@ def main() -> None:
                 state.close()
             except Exception:
                 pass
+
+        if should_skip_url(url):
+            LOG.info("job_skipped_invalid_url site=%s url=%s", site, url)
+            state = SQLiteState(args.db)
+            state.complete_job_task(url)
+            state.close()
+            continue
 
         try:
             result = run_pipeline(
