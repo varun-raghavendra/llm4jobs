@@ -12,3 +12,4 @@ tracker/.DS_Store
 jobs_filtered.xlsx
 job_details.xlsx
 job_details.csv
+backups/*
