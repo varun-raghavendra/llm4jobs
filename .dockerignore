@@ -1,0 +1,17 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+.DS_Store
+state
+node_link_extractor/node_modules
+job-alert/puppeteer_scraper/node_modules
+job-alert/puppeteer_scraper/headless_debug.png
+node_link_extractor/headless_debug.png
+*.sqlite3
+*.log

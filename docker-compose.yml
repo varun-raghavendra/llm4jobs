@@ -1,0 +1,51 @@
+services:
+  inference:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: jobposttracker:latest
+    command: ["/app/docker/run_inference.sh"]
+    env_file:
+      - .env
+    environment:
+      TZ: America/Denver
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./state:/app/state
+      - ./inputs:/app/inputs:ro
+    restart: unless-stopped
+
+  batch:
+    platform: linux/amd64
+    image: jobposttracker:latest
+    depends_on:
+      - inference
+    command: ["/app/docker/run_batch_loop.sh"]
+    env_file:
+      - .env
+    environment:
+      TZ: America/Denver
+      BATCH_INTERVAL_SECONDS: ${BATCH_INTERVAL_SECONDS:-900}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./state:/app/state
+      - ./inputs:/app/inputs:ro
+    restart: unless-stopped
+
+  email:
+    platform: linux/amd64
+    image: jobposttracker:latest
+    depends_on:
+      - inference
+    command: ["/app/docker/run_email_loop.sh"]
+    env_file:
+      - .env
+    environment:
+      TZ: America/Denver
+      EMAIL_INTERVAL_SECONDS: ${EMAIL_INTERVAL_SECONDS:-900}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./state:/app/state
+      - ./inputs:/app/inputs:ro
+    restart: unless-stopped
