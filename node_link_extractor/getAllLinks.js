@@ -4,6 +4,16 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function shouldDisableSandbox() {
+  const raw = (process.env.PUPPETEER_DISABLE_SANDBOX || process.env.PPT_DISABLE_SANDBOX || "")
+    .trim()
+    .toLowerCase();
+  const envWantsDisable = raw === "1" || raw === "true" || raw === "yes";
+  const isRoot = typeof process.getuid === "function" && process.getuid() === 0;
+  // In Docker this often runs as root; Chromium will refuse to start unless sandbox is disabled.
+  return envWantsDisable || isRoot;
+}
+
 function isHttpUrl(value) {
   if (typeof value !== "string") return false;
   try {
@@ -15,12 +25,18 @@ function isHttpUrl(value) {
 }
 
 async function launchBrowser() {
+  const args = [
+    "--window-size=1280,800",
+    "--disable-blink-features=AutomationControlled"
+  ];
+
+  if (shouldDisableSandbox()) {
+    args.unshift("--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage");
+  }
+
   return puppeteer.launch({
     headless: "new",
-    args: [
-      "--window-size=1280,800",
-      "--disable-blink-features=AutomationControlled"
-    ]
+    args
   });
 }
 
