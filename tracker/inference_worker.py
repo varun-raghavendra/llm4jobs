@@ -184,6 +184,7 @@ def main() -> None:
     ap.add_argument("--extract-experience-py", required=True)
     ap.add_argument("--timeout-seconds", type=int, default=120)
     ap.add_argument("--poll-sleep-seconds", type=int, default=2)
+    ap.add_argument("--max-job-attempts", type=int, default=3)
     ap.add_argument("--max-jobs-per-run", type=int, default=0, help="0 means infinite loop")
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
@@ -199,12 +200,18 @@ def main() -> None:
         try:
             state.reap_stuck_diffs()
             state.reap_stuck_job_tasks()
+            over_limit = state.mark_over_attempt_limit_job_tasks_failed(args.max_job_attempts)
+            if over_limit:
+                LOG.warning("job_retry_cap_marked_failed count=%d max_attempts=%d", over_limit, args.max_job_attempts)
 
             inserted = expand_one_diff(state, owner)
             if inserted:
                 LOG.info("expanded_diff inserted_tasks=%d", inserted)
 
-            claimed: Optional[Tuple[str, str]] = state.claim_job_task(owner=owner)
+            claimed: Optional[Tuple[str, str]] = state.claim_job_task(
+                owner=owner,
+                max_attempts=args.max_job_attempts,
+            )
             if not claimed:
                 state.close()
                 time.sleep(args.poll_sleep_seconds)

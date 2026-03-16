@@ -438,7 +438,29 @@ class SQLiteState:
         self.conn.commit()
         return cur.rowcount
 
-    def claim_job_task(self, owner: str) -> Optional[Tuple[str, str]]:
+    def mark_over_attempt_limit_job_tasks_failed(self, max_attempts: int, reason: str | None = None) -> int:
+        now = now_epoch_ms()
+        cur = self.conn.cursor()
+        msg = reason or f"max_attempts_exceeded attempts>{max_attempts}"
+        cur.execute(
+            """
+            UPDATE job_tasks
+            SET status = 'FAILED',
+                last_error = CASE
+                  WHEN last_error IS NULL OR trim(last_error) = '' THEN ?
+                  ELSE last_error
+                END,
+                backoff_until_ms = NULL,
+                updated_ts_ms = ?
+            WHERE status IN ('PENDING', 'FAILED')
+              AND attempts > ?;
+            """,
+            (msg, now, max_attempts),
+        )
+        self.conn.commit()
+        return cur.rowcount
+
+    def claim_job_task(self, owner: str, max_attempts: int = 3) -> Optional[Tuple[str, str]]:
         now = now_epoch_ms()
         cur = self.conn.cursor()
         cur.execute("BEGIN IMMEDIATE;")
@@ -449,10 +471,11 @@ class SQLiteState:
                 FROM job_tasks
                 WHERE status IN ('PENDING', 'FAILED')
                   AND (backoff_until_ms IS NULL OR backoff_until_ms <= ?)
+                  AND attempts <= ?
                 ORDER BY created_ts_ms ASC
                 LIMIT 1;
                 """,
-                (now,),
+                (now, max_attempts),
             )
             row = cur.fetchone()
             if not row:
