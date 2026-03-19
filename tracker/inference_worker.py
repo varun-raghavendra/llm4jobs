@@ -16,6 +16,11 @@ from tracker.db import SQLiteState
 
 LOG = logging.getLogger("tracker.inference_worker")
 BLOCKED_HOSTS = {"errors.edgesuite.net"}
+# URLs containing any of these substrings are skipped
+BLOCKED_URL_SUBSTRINGS = [
+    "clickhouse.cloud",
+    "conductortech.com",
+]
 
 
 def is_http_url(value: str) -> bool:
@@ -33,7 +38,12 @@ def should_skip_url(value: str) -> bool:
         host = urlparse(value.strip()).hostname or ""
     except Exception:
         return True
-    return host in BLOCKED_HOSTS
+    if host in BLOCKED_HOSTS:
+        return True
+    url_lower = value.strip().lower()
+    if any(sub in url_lower for sub in BLOCKED_URL_SUBSTRINGS):
+        return True
+    return False
 
 
 def setup_logging(verbose: bool) -> None:
